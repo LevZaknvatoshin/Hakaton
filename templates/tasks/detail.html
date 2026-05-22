@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load ttm_tags %}
+{% block title %}{{ task.title }} TTM{% endblock %}
+{% block content %}
+<section class="detail-layout">
+  <article class="panel">
+    <div class="panel-head">
+      <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+          <span class="badge {{ task.status|status_class }}" style="font-size: 14px;">{{ task.get_status_display }}</span>
+          <h2 style="margin: 0;">{{ task.title }}</h2>
+        </div>
+        <p style="margin: 0;">{{ task.description }}</p>
+      </div>
+      {% if user.profile.role != 'employee' %}
+      <a class="btn btn-light" href="{% url 'tasks:edit' task.id %}">Редактировать</a>
+      {% endif %}
+    </div>
+    <div class="detail-grid">
+      <span>Отдел <strong>{{ task.department.name|default:"Без отдела" }}</strong></span>
+      <span>Ответственный <strong>{{ task.responsible.profile.full_name|default:"не назначен" }}</strong></span>
+      <span>Период <strong>{{ task.get_planning_period_display }}</strong></span>
+      <span>Дедлайн <strong>{{ task.deadline|date:"d.m.Y"|default:"без срока" }}</strong></span>
+      <span>Прогресс <strong>{{ task.progress }}%</strong></span>
+      <span>Риск <strong class="badge {{ task.risk_level|risk_class }}">{{ task.get_risk_level_display }}</strong></span>
+    </div>
+    <div class="risk-box">
+      <strong>{{ task.risk_reason }}</strong>
+      <p>{{ task.risk_recommendation }}</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
+      <div class="task-actions" style="display: flex; align-items: center; gap: 10px; margin: 0;">
+        
+        {% if task.status == 'new' and user == task.responsible %}
+          <form method="post" action="{% url 'tasks:change_status' task.id %}" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="accept">
+            <button class="btn btn-primary" type="submit">Принять в работу</button>
+          </form>
+        {% endif %}
+
+        {% if task.status == 'in_progress' and user == task.responsible %}
+          <form method="post" action="{% url 'tasks:change_status' task.id %}" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="complete">
+            <button class="btn btn-primary" type="submit">Отправить на проверку</button>
+          </form>
+        {% endif %}
+
+        {% if task.status == 'review' and user.profile.role != 'employee' %}
+          <form method="post" action="{% url 'tasks:change_status' task.id %}" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="confirm">
+            <button class="btn btn-success" type="submit">Подтвердить выполнение</button>
+          </form>
+          <form method="post" action="{% url 'tasks:change_status' task.id %}" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+            <button class="btn btn-warning" type="submit">Вернуть в работу (Отклонить)</button>
+          </form>
+        {% endif %}
+      </div>
+      {% if user.profile.role != 'employee' %}
+      <form method="post" action="{% url 'tasks:delete' task.id %}" style="margin: 0;" onsubmit="return confirmTaskDelete(event, this);">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit" style="white-space: nowrap;">Удалить задачу</button>
+      </form>
+      {% endif %}
+    </div>
+  </article>
+  <aside class="panel">
+    <h3>Комментарии</h3>
+    <form method="post" action="{% url 'tasks:add_comment' task.id %}" class="stack" style="margin-bottom: 16px;">
+      {% csrf_token %}
+      {{ comment_form.text }}
+      <button class="btn btn-light" type="submit">Добавить комментарий</button>
+    </form>
+    <div class="comments-scroll" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; padding-bottom: 8px;">
+      {% for comment in comments %}
+        <div class="timeline-item"><strong>{{ comment.author.profile.full_name|default:comment.author.username }}</strong><p>{{ comment.text }}</p></div>
+      {% empty %}
+        <p class="empty">Комментариев пока нет.</p>
+      {% endfor %}
+    </div>
+  </aside>
+</section>
+
+<script>
+  async function confirmTaskDelete(e, form) {
+    e.preventDefault();
+    if (await window.ttmModal.confirm('Удалить задачу', 'Вы уверены, что хотите удалить эту задачу? Это действие нельзя отменить.')) {
+      form.submit();
+    }
+  }
+</script>
+{% endblock %}

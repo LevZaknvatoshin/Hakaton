@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load ttm_tags %}
+{% block title %}{{ profile.full_name }} — TTM{% endblock %}
+{% block content %}
+<section class="detail-layout">
+  <div>
+    <article class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Задачи сотрудника</h2>
+          <p class="muted">{{ tasks|length }} {{ tasks|length|pluralize:"задача,задачи,задач" }}</p>
+        </div>
+        <a class="btn btn-ghost" href="{% url 'employees_root' %}">← Все сотрудники</a>
+      </div>
+      {% for task in tasks %}
+        <a class="task-row" href="{% url 'tasks:detail' task.id %}">
+          <span>
+            <strong>{{ task.title }}</strong>
+            <small>{{ task.department.name|default:"Без отдела" }} · {{ task.deadline|date:"d.m.Y"|default:"нет дедлайна" }}</small>
+          </span>
+          <em class="badge {{ task.status|status_class }}">{{ task.get_status_display }}</em>
+        </a>
+      {% empty %}
+        <p class="empty">У сотрудника нет задач.</p>
+      {% endfor %}
+    </article>
+  </div>
+
+  <div class="stack">
+    <article class="panel">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+        <div class="avatar">{{ profile.full_name|make_list|first }}</div>
+        <div>
+          <h2 style="margin:0 0 4px;">{{ profile.full_name }}</h2>
+          <p class="muted" style="margin:0;">{{ profile.position }}</p>
+        </div>
+      </div>
+      <div class="detail-grid" style="grid-template-columns:repeat(2,1fr);">
+        <span>Отдел<strong>{{ profile.department.name|default:"Не указан" }}</strong></span>
+        <span>Команда<strong>{{ profile.team.name|default:"Не указана" }}</strong></span>
+        <span>Роль<strong>{{ profile.get_role_display }}</strong></span>
+        <span>Загрузка
+          <strong>
+            {% if profile.workload_index == 'normal' %}
+              <svg style="vertical-align: middle; margin-left: 4px;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+            {% elif profile.workload_index == 'high' %}
+              <svg style="vertical-align: middle; margin-left: 4px;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="15" x2="16" y2="15"></line><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+            {% else %}
+              <svg style="vertical-align: middle; margin-left: 4px;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+            {% endif %}
+          </strong>
+        </span>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h3>Статистика</h3>
+      <div class="detail-grid" style="grid-template-columns:repeat(2,1fr);">
+        <span>Всего задач<strong>{{ stats.total }}</strong></span>
+        <span>В работе<strong>{{ stats.active }}</strong></span>
+        <span>Выполнено<strong>{{ stats.done }}</strong></span>
+        <span>Просрочено<strong style="color:var(--red);">{{ stats.overdue }}</strong></span>
+      </div>
+    </article>
+  </div>
+</section>
+{% endblock %}
