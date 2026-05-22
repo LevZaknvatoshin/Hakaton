@@ -8,3 +8,7 @@ __pycache__/
 .coverage
 htmlcov/
 .pytest_cache/
+Лого/
+Фоны/
+*.pdf
+test_load_time.py
